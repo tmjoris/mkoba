@@ -23,7 +23,8 @@ final class GroupSessionTests: XCTestCase {
         let event = try await session.record(.contributionRecorded(member: me, amount: .kes(1_000), cycle: CycleID(0), reference: nil))
         XCTAssertNil(session.rejection(of: event))
         XCTAssertEqual(session.state.pot, .kes(1_000))
-        XCTAssertEqual(try await store.events(in: group).count, 3)
+        let stored = try await store.events(in: group)
+        XCTAssertEqual(stored.count, 3)
 
         let refused = try await session.record(.payoutRecorded(member: me, amount: .kes(5_000), reason: "too much"))
         XCTAssertEqual(session.rejection(of: refused), .insufficientPot(available: .kes(1_000)))
