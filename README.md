@@ -1,5 +1,7 @@
 # Mkoba
 
+[![CI](https://github.com/tmjoris/mkoba/actions/workflows/ci.yml/badge.svg)](https://github.com/tmjoris/mkoba/actions/workflows/ci.yml)
+
 Offline-first chama (group savings) app for iOS, with M-Pesa contributions and SACCO-style lending.
 
 A chama is a Kenyan savings group: members contribute on a schedule, the pot funds loans
@@ -109,6 +111,6 @@ store. CI does the same on a macOS runner.
 
 - [x] Core ledger, money, sync, Daraja types, payment state machine (Linux CI)
 - [x] Vapor server with simulator and sandbox support
-- [x] iOS app sources: groups, dashboard, members, contribute, cash, loans
-- [ ] First build on a Mac and screenshots
+- [x] iOS app: groups, dashboard, members, contribute, cash, loans; unit and UI tests green on a macOS runner
+- [ ] Screenshots
 - [ ] TestFlight
