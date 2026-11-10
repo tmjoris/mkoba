@@ -13,7 +13,7 @@ final class CoreDataEventStore: EventStore, @unchecked Sendable {
 
     private func perform<T: Sendable>(_ work: @escaping @Sendable (NSManagedObjectContext) throws -> T) async throws -> T {
         let context = container.newBackgroundContext()
-        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        context.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         return try await context.perform { try work(context) }
     }
 

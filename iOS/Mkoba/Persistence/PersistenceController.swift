@@ -17,6 +17,6 @@ struct PersistenceController {
         }
         container.viewContext.automaticallyMergesChangesFromParent = true
         // Events are immutable and unique by id, so a duplicate insert is a no-op, not a conflict.
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
     }
 }
