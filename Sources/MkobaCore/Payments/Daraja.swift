@@ -108,6 +108,15 @@ public enum Daraja {
         public let responseDescription: String
         public let customerMessage: String
 
+        public init(merchantRequestID: String, checkoutRequestID: String, responseCode: String,
+                    responseDescription: String, customerMessage: String) {
+            self.merchantRequestID = merchantRequestID
+            self.checkoutRequestID = checkoutRequestID
+            self.responseCode = responseCode
+            self.responseDescription = responseDescription
+            self.customerMessage = customerMessage
+        }
+
         enum CodingKeys: String, CodingKey {
             case merchantRequestID = "MerchantRequestID"
             case checkoutRequestID = "CheckoutRequestID"
@@ -143,6 +152,7 @@ public enum Daraja {
     public struct Callback: Codable, Sendable, Hashable {
         public struct Body: Codable, Sendable, Hashable {
             public let stkCallback: StkCallback
+            public init(stkCallback: StkCallback) { self.stkCallback = stkCallback }
         }
 
         public struct StkCallback: Codable, Sendable, Hashable {
@@ -151,6 +161,15 @@ public enum Daraja {
             public let resultCode: Int
             public let resultDesc: String
             public let callbackMetadata: Metadata?
+
+            public init(merchantRequestID: String, checkoutRequestID: String, resultCode: Int, resultDesc: String,
+                        callbackMetadata: Metadata?) {
+                self.merchantRequestID = merchantRequestID
+                self.checkoutRequestID = checkoutRequestID
+                self.resultCode = resultCode
+                self.resultDesc = resultDesc
+                self.callbackMetadata = callbackMetadata
+            }
 
             enum CodingKeys: String, CodingKey {
                 case merchantRequestID = "MerchantRequestID"
@@ -163,6 +182,7 @@ public enum Daraja {
 
         public struct Metadata: Codable, Sendable, Hashable {
             public let item: [Item]
+            public init(item: [Item]) { self.item = item }
             enum CodingKeys: String, CodingKey { case item = "Item" }
         }
 
@@ -170,6 +190,11 @@ public enum Daraja {
         public struct Item: Codable, Sendable, Hashable {
             public let name: String
             public let value: Value?
+
+            public init(name: String, value: Value?) {
+                self.name = name
+                self.value = value
+            }
 
             public enum Value: Codable, Sendable, Hashable {
                 case string(String)
@@ -208,6 +233,7 @@ public enum Daraja {
         }
 
         public let body: Body
+        public init(body: Body) { self.body = body }
         enum CodingKeys: String, CodingKey { case body = "Body" }
 
         public var checkoutRequestID: String { body.stkCallback.checkoutRequestID }
@@ -240,6 +266,13 @@ public struct MpesaReceipt: Hashable, Sendable, Codable {
     public let phone: PhoneNumber
     /// Daraja's "yyyyMMddHHmmss" string, kept verbatim for audit.
     public let transactionDate: String
+
+    public init(number: String, amount: Money, phone: PhoneNumber, transactionDate: String) {
+        self.number = number
+        self.amount = amount
+        self.phone = phone
+        self.transactionDate = transactionDate
+    }
 
     public var reference: PaymentReference { PaymentReference(mpesaReceipt: number) }
 }

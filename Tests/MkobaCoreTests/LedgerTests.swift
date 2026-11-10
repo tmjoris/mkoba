@@ -38,6 +38,27 @@ final class LedgerTests: XCTestCase {
         XCTAssertTrue(state.applied.contains(rogue.id), "rejected events still count as seen")
     }
 
+    func testMemberMayRecordOwnContributionOnlyWithReceipt() {
+        var chama = ChamaFixture()
+        let cash = chama.log.record(
+            .contributionRecorded(member: chama.amina, amount: .kes(2_000), cycle: CycleID(0), reference: nil),
+            by: chama.amina, on: chama.phone, at: chama.date(day: 1))
+        let mpesa = chama.log.record(
+            .contributionRecorded(member: chama.amina, amount: .kes(2_000), cycle: CycleID(0),
+                                  reference: PaymentReference(mpesaReceipt: "NLJ7RT61SV")),
+            by: chama.amina, on: chama.phone, at: chama.date(day: 1))
+        let forOther = chama.log.record(
+            .contributionRecorded(member: chama.brian, amount: .kes(2_000), cycle: CycleID(0),
+                                  reference: PaymentReference(mpesaReceipt: "NLJ7RT61SW")),
+            by: chama.amina, on: chama.phone, at: chama.date(day: 1))
+
+        let state = chama.state
+        XCTAssertEqual(state.rejected[cash.id], .notAnOfficial(chama.amina))
+        XCTAssertNil(state.rejected[mpesa.id])
+        XCTAssertEqual(state.rejected[forOther.id], .notAnOfficial(chama.amina))
+        XCTAssertEqual(state.pot, .kes(2_000))
+    }
+
     func testPayoutCannotExceedPot() {
         var chama = ChamaFixture()
         chama.contribute(chama.amina, .kes(1_000), cycle: 0)

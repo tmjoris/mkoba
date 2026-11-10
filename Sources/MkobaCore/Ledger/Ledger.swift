@@ -69,9 +69,13 @@ public enum Ledger {
             state.members[member]?.role = role
 
         case let .contributionRecorded(member, amount, cycle, reference):
-            try requireOfficial(event.recordedBy, in: state)
             try requireMember(member, in: state)
             try requirePositive(amount, in: state)
+            // Cash handed to the treasurer needs an official's word. An M-Pesa receipt is
+            // its own proof, so a member (or the payments server) may record that one.
+            if reference == nil || event.recordedBy != member {
+                try requireOfficial(event.recordedBy, in: state)
+            }
             state.contributions.append(Contribution(eventID: event.id, member: member, amount: amount,
                                                     cycle: cycle, reference: reference, at: event.occurredAt))
             state.pot = state.pot + amount
