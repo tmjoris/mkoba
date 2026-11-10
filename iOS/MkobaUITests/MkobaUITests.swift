@@ -2,6 +2,7 @@ import XCTest
 
 /// End-to-end through the real UI with an in-memory store. No server is needed: every
 /// action here is an offline write, which is the whole point of the app.
+@MainActor
 final class MkobaUITests: XCTestCase {
     var app: XCUIApplication!
 
