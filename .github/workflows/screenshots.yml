@@ -1,0 +1,57 @@
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "iOS/**"
+      - ".github/workflows/screenshots.yml"
+
+jobs:
+  screenshots:
+    name: Capture on iPhone 16 Pro
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate project
+        run: brew install xcodegen && cd iOS && xcodegen generate
+      - name: Boot simulator with a clean status bar
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for v in d.values() for x in v if x["name"]=="iPhone 16 Pro"))')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b || true
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+      - name: Run the walkthrough
+        run: |
+          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -only-testing:MkobaUITests/ScreenshotTests -resultBundlePath Shots.xcresult
+      - name: Export attachments
+        run: |
+          xcrun xcresulttool export attachments --path Shots.xcresult --output-path shots
+          python3 - <<'PY'
+          import json, os, shutil, glob
+          out = "screenshots"; os.makedirs(out, exist_ok=True)
+          manifest = json.load(open("shots/manifest.json")) if os.path.exists("shots/manifest.json") else []
+          def walk(node):
+              if isinstance(node, dict):
+                  if "exportedFileName" in node and "suggestedHumanReadableName" in node:
+                      yield node
+                  for v in node.values(): yield from walk(v)
+              elif isinstance(node, list):
+                  for v in node: yield from walk(v)
+          found = 0
+          for att in walk(manifest):
+              name = att["suggestedHumanReadableName"].split("_")[0]
+              if not name.endswith(".png"): name = os.path.splitext(name)[0] + ".png"
+              shutil.copy(os.path.join("shots", att["exportedFileName"]), os.path.join(out, name)); found += 1
+          if not found:
+              for f in glob.glob("shots/*.png"): shutil.copy(f, out)
+          print(sorted(os.listdir(out)))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
