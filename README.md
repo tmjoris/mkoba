@@ -15,6 +15,23 @@ Server/               Vapor API: sync endpoint, M-Pesa STK push, callback, recon
 iOS/                  SwiftUI app (MVVM), Core Data event store, Swift Charts, XCTest + XCUITest.
 ```
 
+## Screenshots
+
+Captured by the `Screenshots` workflow on an iPhone 16 Pro simulator from the XCUITest walkthrough.
+
+<p>
+<img src="docs/screenshots/01-empty.png" width="180" alt="Empty state">
+<img src="docs/screenshots/02-create-group.png" width="180" alt="Create a chama">
+<img src="docs/screenshots/04-dashboard.png" width="180" alt="Dashboard with pot and contribution chart">
+<img src="docs/screenshots/03-members.png" width="180" alt="Members with savings">
+</p>
+<p>
+<img src="docs/screenshots/05-contribute.png" width="180" alt="Pay contribution via M-Pesa">
+<img src="docs/screenshots/06-request-loan.png" width="180" alt="Request a loan with interest preview">
+<img src="docs/screenshots/07-loans.png" width="180" alt="Loans list">
+<img src="docs/screenshots/08-loan-detail.png" width="180" alt="Loan detail with guarantors and treasurer actions">
+</p>
+
 ## What is interesting about it
 
 **Money is never a `Double`.** `Money` is `Int64` minor units plus a currency. Adding,
@@ -112,5 +129,5 @@ store. CI does the same on a macOS runner.
 - [x] Core ledger, money, sync, Daraja types, payment state machine (Linux CI)
 - [x] Vapor server with simulator and sandbox support
 - [x] iOS app: groups, dashboard, members, contribute, cash, loans; unit and UI tests green on a macOS runner
-- [ ] Screenshots
+- [x] Screenshots, captured in CI
 - [ ] TestFlight
