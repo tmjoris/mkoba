@@ -48,9 +48,15 @@ targets:
     sources: [MkobaTests]
     dependencies:
       - target: Mkoba
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
   MkobaUITests:
     type: bundle.ui-testing
     platform: iOS
     sources: [MkobaUITests]
     dependencies:
       - target: Mkoba
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
