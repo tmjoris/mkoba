@@ -1,0 +1,114 @@
+name: Assist
+
+# Builds and tests the SMS import, then reads every message in Assist/Evals with the regex
+# baseline and with small open models served by Ollama. Each model's run is split across
+# four runners so a CPU-only model finishes in minutes.
+
+on:
+  push:
+    branches: [main, sms-import]
+    paths:
+      - "Sources/**"
+      - "Tests/**"
+      - "Assist/**"
+      - ".github/workflows/assist.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and test (Linux, Swift 6.4)
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: Assist/.build
+          key: assist-build-${{ hashFiles('Assist/Package.swift', 'Assist/Package.resolved') }}
+          restore-keys: assist-build-
+      - name: Core tests
+        run: swift test --parallel
+      - name: Assist tests
+        run: swift test --package-path Assist
+      - name: Build the eval runner
+        run: swift build --package-path Assist --product mkoba-eval
+      - name: Regex baseline
+        working-directory: Assist
+        run: |
+          mkdir -p results
+          .build/debug/mkoba-eval run --reader regex --out results/regex.jsonl
+      - run: cp Assist/.build/debug/mkoba-eval mkoba-eval
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mkoba-eval
+          path: mkoba-eval
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-regex
+          path: Assist/results/regex.jsonl
+
+  model:
+    name: ${{ matrix.model }} (${{ matrix.shard }}/4)
+    needs: build
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        model: ["qwen2.5:3b", "llama3.2:3b", "gemma3:4b", "qwen2.5:7b"]
+        shard: [1, 2, 3, 4]
+    services:
+      ollama:
+        image: ollama/ollama:latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mkoba-eval
+      - name: Pull ${{ matrix.model }}
+        run: |
+          apt-get update -qq && apt-get install -y -qq curl > /dev/null
+          curl -sf http://ollama:11434/api/pull -d '{"model": "${{ matrix.model }}", "stream": false}'
+          curl -sf http://ollama:11434/api/tags | head -c 400; echo
+      - name: Read messages
+        working-directory: Assist
+        run: |
+          chmod +x ../mkoba-eval && mkdir -p results
+          NAME=$(echo "${{ matrix.model }}" | tr ':' '-')
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          ../mkoba-eval run --reader ollama --model "${{ matrix.model }}" --ollama-url http://ollama:11434 \
+            --shard ${{ matrix.shard }}/4 --out results/$NAME.${{ matrix.shard }}.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results-${{ env.NAME }}-${{ matrix.shard }}
+          path: Assist/results/*.jsonl
+
+  summary:
+    name: Summary
+    needs: [build, model]
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: downloads
+      - name: Merge shards and summarise
+        run: |
+          mkdir -p results
+          cp downloads/results-regex/regex.jsonl results/
+          for f in downloads/results-*/*.[0-9].jsonl; do
+            [ -e "$f" ] || continue
+            base=$(basename "$f"); cat "$f" >> "results/${base%.*.jsonl}.jsonl"
+          done
+          chmod +x downloads/mkoba-eval/mkoba-eval
+          downloads/mkoba-eval/mkoba-eval summarize results/*.jsonl | tee summary.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: |
+            results
+            summary.md
