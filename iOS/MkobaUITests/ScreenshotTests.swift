@@ -114,7 +114,9 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["import-read"].tap()
         XCTAssertTrue(app.scrolledTo(app.staticTexts["Ready"].firstMatch).waitForExistence(timeout: 10))
         snap("10-import-results")
-        app.swipeUp()
-        snap("11-import-results-more")
+        // Which reader handled each message, and why a model read failed, for the CI log.
+        for source in app.staticTexts.matching(identifier: "import-source").allElementsBoundByIndex {
+            print("import-source: \(source.label) \(source.value as? String ?? "")")
+        }
     }
 }

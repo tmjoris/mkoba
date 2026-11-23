@@ -9,7 +9,7 @@ struct ImportMessagesView: View {
     @Bindable var session: GroupSession
     @Environment(\.dismiss) private var dismiss
     @State private var paste = ""
-    @State private var reviews: [ImportReview] = []
+    @State private var reviews: [MessageImporter.Imported] = []
     @State private var chosen: Set<Int> = []
     @State private var isReading = false
     @State private var error: String?
@@ -42,9 +42,9 @@ struct ImportMessagesView: View {
             }
             if !reviews.isEmpty {
                 Section("What they say") {
-                    ForEach(Array(reviews.enumerated()), id: \.offset) { index, review in
-                        ImportRow(review: review, member: review.member.flatMap(session.member),
-                                  isOn: binding(index))
+                    ForEach(Array(reviews.enumerated()), id: \.offset) { index, item in
+                        ImportRow(review: item.review, source: item.source,
+                                  member: item.review.member.flatMap(session.member), isOn: binding(index))
                     }
                 }
             }
@@ -69,13 +69,13 @@ struct ImportMessagesView: View {
         defer { isReading = false }
         error = nil
         reviews = await importer.review(paste: paste, against: session.state)
-        chosen = Set(reviews.indices.filter { reviews[$0].decision == .record })
+        chosen = Set(reviews.indices.filter { reviews[$0].review.decision == .record })
     }
 
     private func record() async {
         var refused: [String] = []
         for index in chosen.sorted() {
-            guard let kind = reviews[index].event else { continue }
+            guard let kind = reviews[index].review.event else { continue }
             do {
                 let event = try await session.record(kind)
                 if let rejection = session.rejection(of: event) { refused.append(rejection.userMessage) }
@@ -93,6 +93,7 @@ struct ImportMessagesView: View {
 
 private struct ImportRow: View {
     let review: ImportReview
+    let source: MessageImporter.Source
     let member: Member?
     @Binding var isOn: Bool
 
@@ -138,8 +139,26 @@ private struct ImportRow: View {
             }
         }
         .padding(.vertical, 2)
+        .overlay(alignment: .bottomTrailing) {
+            Text(sourceLabel).font(.caption2).foregroundStyle(.tertiary)
+                .accessibilityIdentifier("import-source")
+                .accessibilityValue(failure)
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("import-row")
+    }
+
+    private var sourceLabel: String {
+        switch source {
+        case .rules: "read by rules"
+        case .onDeviceModel: "read on device"
+        case .modelFailed: "could not be read"
+        }
+    }
+
+    private var failure: String {
+        if case let .modelFailed(reason) = source { return reason }
+        return ""
     }
 
     private var badge: some View {
