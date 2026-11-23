@@ -4,8 +4,8 @@ import MkobaCore
 
 /// Reads a paste of M-Pesa messages on this device and checks each one against the books.
 ///
-/// On an iPhone with Apple Intelligence on, messages go to Apple's on-device model;
-/// otherwise the regex reader handles the standard SMS and everything else is left for the
+/// The regex reader handles the standard SMS. On an iPhone with Apple Intelligence on,
+/// whatever it cannot read goes to Apple's on-device model; otherwise that is left for the
 /// treasurer. Either way nothing leaves the phone, and nothing is recorded until the
 /// treasurer taps Record.
 public struct MessageImporter: Sendable {
@@ -43,8 +43,11 @@ public struct MessageImporter: Sendable {
         return ImportReviewer().review(items, against: state, now: now)
     }
 
+    /// Rules first: the regex reads the standard SMS exactly and instantly, so the model only
+    /// sees what the rules cannot read (notes, Swahili, text mangled in copying).
     private func read(_ message: String) async -> MessageReading {
-        guard let reader else { return MpesaSMSReader.read(message) }
+        let rules = MpesaSMSReader.read(message)
+        guard let reader, !rules.isIncomingPayment else { return rules }
         do {
             return try await reader.read(message)
         } catch {
