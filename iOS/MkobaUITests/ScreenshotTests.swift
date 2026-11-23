@@ -115,7 +115,7 @@ final class ScreenshotTests: XCTestCase {
         // Reading can wait on the on-device model, whose calls fail slowly on CI simulators.
         let ready = app.staticTexts["Ready"].firstMatch
         XCTAssertTrue(ready.waitForExistence(timeout: 60))
-        _ = app.scrolledTo(ready)
+        _ = app.scrolledTo(app.staticTexts["Check"].firstMatch) // the last row, so all four show
         snap("10-import-results")
         // Which reader handled each message, and why a model read failed, for the CI log.
         for source in app.staticTexts.matching(identifier: "import-source").allElementsBoundByIndex {
