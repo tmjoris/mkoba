@@ -6,7 +6,7 @@ name: Assist
 
 on:
   push:
-    branches: [main, sms-import]
+    branches: [main]
     paths:
       - "Sources/**"
       - "Tests/**"
