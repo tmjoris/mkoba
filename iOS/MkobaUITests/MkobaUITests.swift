@@ -96,8 +96,9 @@ final class MkobaUITests: XCTestCase {
         paste.tap()
         paste.typeText("TKL3QZ8M2A Confirmed.You have received Ksh2,000.00 from AMINA WANJIKU 0733000222 on 3/11/26 at 7:42 PM New M-PESA balance is Ksh12,340.00.")
         app.buttons["import-read"].tap()
-        let ready = app.scrolledTo(app.staticTexts["Ready"])
-        XCTAssertTrue(ready.waitForExistence(timeout: 10), app.debugDescription)
+        let ready = app.staticTexts["Ready"]
+        XCTAssertTrue(ready.waitForExistence(timeout: 60), app.debugDescription)
+        _ = app.scrolledTo(ready)
         app.buttons["import-record"].tap()
         let pot = app.staticTexts["pot-amount"]
         if !pot.waitForExistence(timeout: 3) { app.swipeDown() } // the dashboard may still be scrolled

@@ -112,7 +112,10 @@ final class ScreenshotTests: XCTestCase {
         ].joined(separator: "\n\n"))
         snap("09-import-paste")
         app.buttons["import-read"].tap()
-        XCTAssertTrue(app.scrolledTo(app.staticTexts["Ready"].firstMatch).waitForExistence(timeout: 10))
+        // Reading can wait on the on-device model, whose calls fail slowly on CI simulators.
+        let ready = app.staticTexts["Ready"].firstMatch
+        XCTAssertTrue(ready.waitForExistence(timeout: 60))
+        _ = app.scrolledTo(ready)
         snap("10-import-results")
         // Which reader handled each message, and why a model read failed, for the CI log.
         for source in app.staticTexts.matching(identifier: "import-source").allElementsBoundByIndex {
