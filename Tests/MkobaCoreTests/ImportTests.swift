@@ -155,6 +155,17 @@ final class ImportTests: XCTestCase {
         XCTAssertEqual(reviewOne(reading, message: swahili).issues, [.amountLooksLikeBalance])
     }
 
+    func testMoneySentIsNotAContribution() {
+        let sent = "TKL3QZ8M2H Confirmed. Ksh2,000.00 sent to AMINA WANJIKU 0733000222 on 6/11/26 at 2:00 PM. New M-PESA balance is Ksh6,200.00."
+        // What a small model produced for this message in the first eval run.
+        let reading = MessageReading(isIncomingPayment: true, receipt: "TKL3QZ8M2H", amountText: "Ksh2,000.00",
+                                     senderName: "AMINA WANJIKU", senderPhone: "*0733000222",
+                                     dateText: #"6\/11\/26 at 2:00 PM"#)
+        let review = reviewOne(reading, message: sent)
+        XCTAssertEqual(review.issues, [.moneyNotReceived], "the stray * and escaped slashes are not issues")
+        XCTAssertEqual(reviewOne(reading, message: sent, checks: false).decision, .record)
+    }
+
     func testNotAPaymentIsSkipped() {
         XCTAssertEqual(reviewOne(.notAPayment).decision, .skip)
     }

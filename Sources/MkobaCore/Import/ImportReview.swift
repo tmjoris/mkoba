@@ -8,6 +8,7 @@ public enum ImportIssue: String, Hashable, Sendable, Codable, CaseIterable {
     case receiptAlreadyRecorded
     case receiptRepeated
     case notAConfirmation
+    case moneyNotReceived
     case amountUnreadable
     case amountNotInMessage
     case amountLooksLikeBalance
@@ -25,6 +26,7 @@ public enum ImportIssue: String, Hashable, Sendable, Codable, CaseIterable {
         case .receiptAlreadyRecorded: return "This M-Pesa code is already in the books."
         case .receiptRepeated: return "This M-Pesa code appears twice in what you pasted."
         case .notAConfirmation: return "This reads like a note, not an M-Pesa confirmation."
+        case .moneyNotReceived: return "M-Pesa does not say this money was received."
         case .amountUnreadable: return "Could not read the amount."
         case .amountNotInMessage: return "That amount is not in the message."
         case .amountLooksLikeBalance: return "That amount looks like the M-Pesa balance."
@@ -121,7 +123,11 @@ public struct ImportReviewer: Sendable {
             if !ImportParsing.contains(message, code) { issues.append(.receiptNotInMessage) }
             if recorded.contains(code) { issues.append(.receiptAlreadyRecorded) }
             if seen.contains(code) { issues.append(.receiptRepeated) }
-            if !Self.isConfirmation(message, code: code) { issues.append(.notAConfirmation) }
+            if !Self.isConfirmation(message, code: code) {
+                issues.append(.notAConfirmation)
+            } else if !Self.saysReceived(message) {
+                issues.append(.moneyNotReceived)
+            }
         }
 
         // Amount: parsed by code, then found among the amounts actually in the message.
@@ -145,12 +151,12 @@ public struct ImportReviewer: Sendable {
         if checks, !name.isEmpty, !ImportParsing.contains(message, name) {
             issues.append(.nameNotInMessage)
         }
-        let phone = reading.senderPhone.trimmingCharacters(in: .whitespaces)
+        let phone = Self.cleanPhone(reading.senderPhone)
         if checks, !forSomeoneElse, !phone.isEmpty, !ImportParsing.contains(message, phone) {
             issues.append(.phoneNotInMessage)
         }
         let members = state.members.values.sorted { $0.id < $1.id }
-        let match = MemberMatcher.match(name: name, phone: forSomeoneElse ? "" : reading.senderPhone,
+        let match = MemberMatcher.match(name: name, phone: forSomeoneElse ? "" : phone,
                                         in: members)
         var member: MemberID?
         switch match {
@@ -190,6 +196,18 @@ public struct ImportReviewer: Sendable {
     public static func isConfirmation(_ message: String, code: String) -> Bool {
         guard looksLikeReceipt(code), let regex = try? Regex(code + #"\s*(confirmed|imethibitishwa)"#).ignoresCase() else { return false }
         return message.contains(regex)
+    }
+
+    /// A confirmation for money coming in says so. Money sent, paid, withdrawn or spent on
+    /// airtime is confirmed in the same format, which is exactly what a reader can mistake.
+    public static func saysReceived(_ message: String) -> Bool {
+        let text = message.lowercased()
+        return text.contains("received") || text.contains("umepokea")
+    }
+
+    /// Stray "*" or spaces around a number are formatting; masks inside it are kept.
+    static func cleanPhone(_ raw: String) -> String {
+        raw.trimmingCharacters(in: CharacterSet(charactersIn: "* ").union(.whitespaces))
     }
 
     /// M-Pesa codes are ten capital letters and digits, with at least one of each.

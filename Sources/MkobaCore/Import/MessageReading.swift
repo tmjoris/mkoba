@@ -57,6 +57,7 @@ public enum ImportParsing {
 
     /// M-Pesa dates are day/month/year: "3/11/26 at 7:42 PM", "03/11/2026 19:42" or "3/11/26".
     public static func date(_ text: String, timeZone: TimeZone) -> Date? {
+        let text = text.replacingOccurrences(of: #"\/"#, with: "/") // JSON-escaped by a model
         guard let regex = try? Regex(#"(\d{1,2})/(\d{1,2})/(\d{2,4})(?:\D{1,5}(\d{1,2}):(\d{2})\s*([AaPp][Mm])?)?"#),
               let match = text.firstMatch(of: regex) else { return nil }
         func int(_ index: Int) -> Int? { match.output[index].substring.flatMap { Int($0) } }
