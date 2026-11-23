@@ -157,13 +157,13 @@ public struct EvalSummary {
         results.filter { (checks ? $0.withChecks : $0.withoutChecks) == outcome }.count
     }
 
-    public var medianSeconds: Double {
-        let sorted = results.map(\.seconds).sorted()
-        return sorted.isEmpty ? 0 : sorted[sorted.count / 2]
+    /// Model time per pasted message, counting messages the rules read as zero.
+    public var meanSeconds: Double {
+        results.isEmpty ? 0 : results.map(\.seconds).reduce(0, +) / Double(results.count)
     }
 
     public static let header = """
-        | Reader | Checks | Correct | Wrong (one tap) | Flagged | Missed | Failed | Median s/msg |
+        | Reader | Checks | Correct | Wrong (one tap) | Flagged | Missed | Failed | Model s/msg |
         |---|---|---|---|---|---|---|---|
         """
 
@@ -172,7 +172,7 @@ public struct EvalSummary {
         return [false, true].map { checks in
             "| \(name) | \(checks ? "on" : "off") | \(count(.correct, checks: checks))/\(results.count) | "
                 + "\(count(.wrong, checks: checks)) | \(count(.flagged, checks: checks)) | "
-                + "\(count(.missed, checks: checks)) | \(failed) | \(String(format: "%.1f", medianSeconds)) |"
+                + "\(count(.missed, checks: checks)) | \(failed) | \(String(format: "%.1f", meanSeconds)) |"
         }.joined(separator: "\n")
     }
 }
