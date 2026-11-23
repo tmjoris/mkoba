@@ -26,7 +26,10 @@ struct GeneratedReading {
 
     @Guide(description: "The date and time copied exactly, for example 3/11/26 at 7:42 PM. Empty if there is none.")
     var dateText: String
+}
 
+// Outside the struct body: @Generable would treat a property inside it as a field to generate.
+extension GeneratedReading {
     var reading: MessageReading {
         MessageReading(isIncomingPayment: isIncomingPayment, receipt: receipt, amountText: amountText,
                        senderName: senderName, senderPhone: senderPhone, paidForName: paidForName,
