@@ -38,6 +38,11 @@ jobs:
         run: |
           mkdir -p results
           .build/debug/mkoba-eval run --reader regex --out results/regex.jsonl
+      - name: Re-score the last model run with the current checks
+        working-directory: Assist
+        run: |
+          .build/debug/mkoba-eval summarize Evals/runs/2/*.jsonl | tee rescored.md
+          { echo "## Run 2 readings, re-scored with this commit's checks"; cat rescored.md; } >> "$GITHUB_STEP_SUMMARY"
       - run: cp Assist/.build/debug/mkoba-eval mkoba-eval
       - uses: actions/upload-artifact@v4
         with:

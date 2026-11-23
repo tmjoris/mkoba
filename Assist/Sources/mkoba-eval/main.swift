@@ -76,9 +76,16 @@ case "summarize":
     let paths = args.dropFirst().filter { $0 != "--cases" && $0 != casesPath }
     var all: [(String, [EvalResult])] = []
     for path in paths {
+        // Outcomes are re-scored from the saved readings with the current checks, so a change
+        // to the checks can be measured on an earlier run without calling the models again.
         let results = try String(contentsOfFile: path, encoding: .utf8)
             .split(separator: "\n")
             .map { try decoder.decode(EvalResult.self, from: Data($0.utf8)) }
+            .map { saved -> EvalResult in
+                guard let c = cases[saved.id] else { return saved }
+                return EvalResult.evaluate(c, reading: saved.reading, error: saved.error, seconds: saved.seconds,
+                                           state: state)
+            }
         let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
         all.append((name, results))
         guard name != "regex" else { continue }
