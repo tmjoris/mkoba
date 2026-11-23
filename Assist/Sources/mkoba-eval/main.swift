@@ -50,10 +50,13 @@ case "run":
         let started = Date()
         var reading: MessageReading?
         var error: String?
-        do {
-            reading = try await read(c.text)
-        } catch let caught {
-            error = String(describing: caught)
+        for attempt in 1...2 where reading == nil {
+            do {
+                reading = try await read(c.text)
+                error = nil
+            } catch let caught {
+                error = "attempt \(attempt): \(caught)"
+            }
         }
         let result = EvalResult.evaluate(c, reading: reading, error: error,
                                          seconds: Date().timeIntervalSince(started), state: state)

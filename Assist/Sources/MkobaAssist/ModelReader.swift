@@ -6,7 +6,7 @@ import MkobaCore
 /// output always decode into this shape; whether the values are right is checked later.
 @Generable
 struct GeneratedReading {
-    @Guide(description: "true if the text says the treasurer received money, or a member says they sent money to the treasurer. false for money sent or paid by the treasurer, withdrawals, airtime, Fuliza, M-Shwari, reversals, balance checks and chat.")
+    @Guide(description: "true only if the text says the treasurer received money (\"You have received\", \"Umepokea\") or a member says they sent money to the treasurer. false when money was sent to someone, paid to a business, withdrawn, used for airtime, borrowed from Fuliza or moved from M-Shwari, even if a name or phone number appears; false for reversals, balance checks and chat.")
     var isIncomingPayment: Bool
 
     @Guide(description: "The M-Pesa transaction code copied exactly, usually 10 capital letters and digits. Empty if there is none.")
@@ -18,7 +18,7 @@ struct GeneratedReading {
     @Guide(description: "The sender's name copied exactly. Empty if there is none.")
     var senderName: String
 
-    @Guide(description: "The sender's phone number copied exactly, including any * characters. Empty if there is none.")
+    @Guide(description: "The sender's phone number copied exactly as written. Empty if there is none.")
     var senderPhone: String
 
     @Guide(description: "Only if the text says the money is for a different person than the sender: that person's name copied exactly. Otherwise empty.")
