@@ -5,7 +5,7 @@ import MkobaCore
 
 // mkoba-eval run --reader regex|ollama [--model qwen2.5:3b] [--cases Evals/messages.jsonl]
 //                [--out results.jsonl] [--shard 1/4]
-// mkoba-eval summarize results/*.jsonl
+// mkoba-eval summarize [--cases Evals/messages.jsonl] results/*.jsonl
 
 func option(_ name: String, in args: [String]) -> String? {
     guard let index = args.firstIndex(of: "--\(name)"), index + 1 < args.count else { return nil }
@@ -67,18 +67,35 @@ case "run":
 
 case "summarize":
     let decoder = JSONDecoder()
-    print(EvalSummary.header)
+    let casesPath = option("cases", in: args) ?? "Evals/messages.jsonl"
+    let cases = Dictionary(uniqueKeysWithValues: try EvalCase.load(URL(fileURLWithPath: casesPath)).map { ($0.id, $0) })
+    let state = EvalChama.state()
+    let paths = args.dropFirst().filter { $0 != "--cases" && $0 != casesPath }
     var all: [(String, [EvalResult])] = []
-    for path in args.dropFirst() {
+    for path in paths {
         let results = try String(contentsOfFile: path, encoding: .utf8)
             .split(separator: "\n")
             .map { try decoder.decode(EvalResult.self, from: Data($0.utf8)) }
         let name = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
         all.append((name, results))
+        guard name != "regex" else { continue }
+        // Rules first: the regex reads the standard SMS exactly and for free, and the model
+        // only sees what the regex calls "not a payment". Computed from the saved readings.
+        let hybrid = results.compactMap { result -> EvalResult? in
+            guard let c = cases[result.id] else { return nil }
+            let rules = MpesaSMSReader.read(c.text)
+            return rules.isIncomingPayment
+                ? EvalResult.evaluate(c, reading: rules, error: nil, seconds: 0, state: state)
+                : EvalResult.evaluate(c, reading: result.reading, error: result.error, seconds: result.seconds,
+                                      state: state)
+        }
+        all.append(("rules + \(name)", hybrid))
+    }
+    print(EvalSummary.header)
+    for (name, results) in all {
         print(EvalSummary(name: name, results: results).rows())
     }
-    // Where each reader went wrong with checks on, by kind of message.
-    print("\nWrong or missed with checks on, by message kind:\n")
+    print("\nWrong or missed with checks on:\n")
     for (name, results) in all {
         let bad = results.filter { $0.withChecks == .wrong || $0.withChecks == .missed }
         let text = bad.isEmpty ? "none" : bad.map { "\($0.id) (\($0.withChecks.rawValue))" }.joined(separator: ", ")

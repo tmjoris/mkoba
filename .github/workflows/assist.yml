@@ -104,7 +104,7 @@ jobs:
             base=$(basename "$f"); cat "$f" >> "results/${base%.*.jsonl}.jsonl"
           done
           chmod +x downloads/mkoba-eval/mkoba-eval
-          downloads/mkoba-eval/mkoba-eval summarize results/*.jsonl | tee summary.md
+          downloads/mkoba-eval/mkoba-eval summarize --cases Assist/Evals/messages.jsonl results/*.jsonl | tee summary.md
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
