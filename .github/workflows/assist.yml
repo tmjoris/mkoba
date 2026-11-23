@@ -20,8 +20,25 @@ jobs:
     name: Build and test (Linux, Swift 6.4)
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
+    outputs:
+      models: ${{ steps.changes.outputs.models }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Do the models need to run again?
+        id: changes
+        # Only when what the models see or how they are run changed. Changes to the checks are
+        # measured by re-scoring the saved readings below, without calling the models.
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          if [ "${{ github.event_name }}" = workflow_dispatch ] || ! git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            echo "models=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -qE '^Assist/(Sources/MkobaAssist/ModelReader.swift|Sources/mkoba-eval/|Evals/messages.jsonl)|^.github/workflows/assist.yml'; then
+            echo "models=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "models=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/cache@v4
         with:
           path: Assist/.build
@@ -56,6 +73,7 @@ jobs:
   model:
     name: ${{ matrix.model }} (${{ matrix.shard }}/4)
     needs: build
+    if: needs.build.outputs.models == 'true'
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     timeout-minutes: 60
@@ -93,7 +111,7 @@ jobs:
   summary:
     name: Summary
     needs: [build, model]
-    if: always() && needs.build.result == 'success'
+    if: always() && needs.build.result == 'success' && needs.build.outputs.models == 'true'
     runs-on: ubuntu-24.04
     container: swift:6.4-noble
     steps:
