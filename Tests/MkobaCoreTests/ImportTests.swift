@@ -167,6 +167,15 @@ final class ImportTests: XCTestCase {
         XCTAssertEqual(reviewOne(reading, message: sent, checks: false).decision, .record)
     }
 
+    func testAnEmptyReadingSaysSoOnce() {
+        let sent = "TKN5WX7C3D Confirmed. Ksh500.00 sent to BRIAN 0744000333 on 5/11/26 at 6:10 PM. New M-PESA balance is Ksh13,340.00."
+        let empty = MessageReading(isIncomingPayment: true)
+        XCTAssertEqual(reviewOne(empty, message: sent).decision, .skip, "M-Pesa says the money went out")
+        let note = reviewOne(empty, message: "Nimetuma ya chama jana")
+        XCTAssertEqual(note.issues, [.unreadable])
+        XCTAssertEqual(note.decision, .check)
+    }
+
     func testNotAPaymentIsSkipped() {
         XCTAssertEqual(reviewOne(.notAPayment).decision, .skip)
     }

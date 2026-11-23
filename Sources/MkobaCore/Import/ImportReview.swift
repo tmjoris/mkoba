@@ -17,6 +17,7 @@ public enum ImportIssue: String, Hashable, Sendable, Codable, CaseIterable {
     case memberNotFound
     case memberAmbiguous
     case dateUnreadable
+    case unreadable
 
     public var explanation: String {
         switch self {
@@ -35,6 +36,7 @@ public enum ImportIssue: String, Hashable, Sendable, Codable, CaseIterable {
         case .memberNotFound: return "No member matches the sender."
         case .memberAmbiguous: return "More than one member could have sent this."
         case .dateUnreadable: return "Could not read the date."
+        case .unreadable: return "Could not read this message. Check it yourself."
         }
     }
 }
@@ -112,6 +114,14 @@ public struct ImportReviewer: Sendable {
         guard reading.isIncomingPayment else {
             return ImportReview(message: message, reading: reading, amount: nil, member: nil,
                                 candidates: [], date: nil, cycle: nil, issues: [])
+        }
+        // Nothing read at all (the reader failed or came back empty): say so once, unless
+        // M-Pesa's own words show the money went out.
+        if reading.receipt.isEmpty, reading.amountText.isEmpty, reading.senderName.isEmpty,
+           reading.senderPhone.isEmpty, reading.paidForName.isEmpty {
+            let wentOut = Self.isAnyConfirmation(message) && !Self.saysReceived(message)
+            return ImportReview(message: message, reading: reading, amount: nil, member: nil, candidates: [],
+                                date: nil, cycle: nil, issues: wentOut ? [.moneyNotReceived] : [.unreadable])
         }
         var issues: [ImportIssue] = []
 
@@ -196,6 +206,12 @@ public struct ImportReviewer: Sendable {
     /// "Imethibitishwa" in Swahili). A member's note quoting a code is a claim to check.
     public static func isConfirmation(_ message: String, code: String) -> Bool {
         guard looksLikeReceipt(code), let regex = try? Regex(code + #"\s*(confirmed|imethibitishwa)"#).ignoresCase() else { return false }
+        return message.contains(regex)
+    }
+
+    /// Any M-Pesa confirmation, whatever its code: ten capitals and digits, then "Confirmed".
+    static func isAnyConfirmation(_ message: String) -> Bool {
+        guard let regex = try? Regex(#"[A-Z0-9]{10}\s*(?:[Cc]onfirmed|[Ii]methibitishwa)"#) else { return false }
         return message.contains(regex)
     }
 
