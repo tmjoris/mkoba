@@ -35,24 +35,42 @@ public struct MessageImporter: Sendable {
         return MessageImporter(reader: nil)
     }
 
-    public func review(paste: String, against state: LedgerState, now: Date = Date()) async -> [ImportReview] {
+    /// Who read a message, shown next to it so the treasurer knows what to trust.
+    public enum Source: Sendable, Equatable {
+        case rules
+        case onDeviceModel
+        /// The model was asked and failed; the message is left for the treasurer.
+        case modelFailed(String)
+    }
+
+    public struct Imported: Sendable {
+        public let review: ImportReview
+        public let source: Source
+    }
+
+    public func review(paste: String, against state: LedgerState, now: Date = Date()) async -> [Imported] {
         var items: [(message: String, reading: MessageReading)] = []
+        var sources: [Source] = []
         for message in MessageSplitter.split(paste) {
-            items.append((message, await read(message)))
+            let (reading, source) = await read(message)
+            items.append((message, reading))
+            sources.append(source)
         }
-        return ImportReviewer().review(items, against: state, now: now)
+        let reviews = ImportReviewer().review(items, against: state, now: now)
+        return zip(reviews, sources).map { Imported(review: $0, source: $1) }
     }
 
     /// Rules first: the regex reads the standard SMS exactly and instantly, so the model only
     /// sees what the rules cannot read (notes, Swahili, text mangled in copying).
-    private func read(_ message: String) async -> MessageReading {
+    private func read(_ message: String) async -> (MessageReading, Source) {
         let rules = MpesaSMSReader.read(message)
-        guard let reader, !rules.isIncomingPayment else { return rules }
+        guard let reader, !rules.isIncomingPayment else { return (rules, .rules) }
         do {
-            return try await reader.read(message)
+            return (try await reader.read(message), .onDeviceModel)
         } catch {
-            // A failed read must not quietly drop a payment: show it to the treasurer to check.
-            return MessageReading(isIncomingPayment: true)
+            // An empty reading: the checks show it as unreadable, or skip it if M-Pesa's own
+            // words say the money went out. A failed read never quietly drops a payment.
+            return (MessageReading(isIncomingPayment: true), .modelFailed(String(describing: error)))
         }
     }
 }
