@@ -35,7 +35,7 @@ struct ImportMessagesView: View {
                 Text("Paste M-Pesa messages")
             } footer: {
                 Text(importer.engine == .onDeviceModel
-                     ? "Read on this iPhone by Apple's on-device model, then checked against each message and the books. Nothing leaves the phone."
+                     ? "Standard M-Pesa SMS are read by Mkoba's rules and anything else by Apple's on-device model, then every entry is checked against its message and the books. Nothing leaves the phone."
                      : "Read with Mkoba's M-Pesa SMS rules, then checked against the books. Turn on Apple Intelligence to read notes and Swahili messages too.")
             }
             if !reviews.isEmpty {
