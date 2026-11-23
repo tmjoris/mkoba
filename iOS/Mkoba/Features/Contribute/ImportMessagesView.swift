@@ -108,6 +108,11 @@ private struct ImportRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 badge
+                Text(sourceLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("import-source")
+                    .accessibilityValue(failure)
                 Spacer()
                 if let amount = review.amount, review.decision != .skip {
                     MoneyText(amount: amount, font: .headline)
@@ -139,11 +144,6 @@ private struct ImportRow: View {
             }
         }
         .padding(.vertical, 2)
-        .overlay(alignment: .bottomTrailing) {
-            Text(sourceLabel).font(.caption2).foregroundStyle(.tertiary)
-                .accessibilityIdentifier("import-source")
-                .accessibilityValue(failure)
-        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("import-row")
     }
