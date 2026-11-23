@@ -10,22 +10,22 @@ on:
 
 jobs:
   screenshots:
-    name: Capture on iPhone 16 Pro
-    runs-on: macos-15
+    name: Capture on iPhone 17 Pro
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
       - name: Generate project
         run: brew install xcodegen && cd iOS && xcodegen generate
       - name: Boot simulator with a clean status bar
         run: |
-          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for v in d.values() for x in v if x["name"]=="iPhone 16 Pro"))')
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for v in d.values() for x in v if x["name"]=="iPhone 17 Pro"))')
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b || true
           xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
       - name: Run the walkthrough
         run: |
-          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba \
+          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba -skipMacroValidation \
             -destination "platform=iOS Simulator,id=$UDID" \
             -only-testing:MkobaUITests/ScreenshotTests -resultBundlePath Shots.xcresult
       - name: Export attachments

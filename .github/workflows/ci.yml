@@ -34,12 +34,12 @@ jobs:
         run: brew install xcodegen && cd iOS && xcodegen generate
       - name: Build and unit test
         run: |
-          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba \
+          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba -skipMacroValidation \
             -destination "platform=iOS Simulator,id=$UDID" \
             -only-testing:MkobaTests -resultBundlePath TestResults.xcresult
       - name: UI tests
         run: |
-          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba \
+          xcodebuild test -project iOS/Mkoba.xcodeproj -scheme Mkoba -skipMacroValidation \
             -destination "platform=iOS Simulator,id=$UDID" \
             -only-testing:MkobaUITests
       - uses: actions/upload-artifact@v4
