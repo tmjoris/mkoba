@@ -79,4 +79,42 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Loan"].firstMatch.waitForExistence(timeout: 5))
         snap("08-loan-detail")
     }
+
+    /// The SMS import: two payments, money the treasurer sent out, and a code pasted twice.
+    func testImportWalkthrough() {
+        app.buttons["create-group-empty"].tap()
+        type("group-name", "Umoja Chama")
+        type("my-name", "Wanjiru")
+        type("my-phone", "0712345678")
+        app.buttons["create-group-confirm"].tap()
+        app.staticTexts["Umoja Chama"].firstMatch.tap()
+
+        app.buttons["members-link"].tap()
+        for (name, phone) in [("Amina Wanjiku", "0733000222"), ("Brian Otieno", "0744000333")] {
+            app.buttons["add-member"].tap()
+            type("member-name", name)
+            type("member-phone", phone)
+            app.buttons["add-member-confirm"].tap()
+            XCTAssertTrue(app.staticTexts[name].waitForExistence(timeout: 5))
+        }
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        app.scrolledTo(app.buttons["import-link"]).tap()
+        let paste = app.textViews["import-paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        let amina = "TKL3QZ8M2A Confirmed.You have received Ksh2,000.00 from AMINA WANJIKU 0733000222 on 3/11/26 at 7:42 PM New M-PESA balance is Ksh12,340.00."
+        paste.typeText([
+            amina,
+            "TKM8RT2P4B Confirmed.You have received Ksh1,500.00 from BRIAN OTIENO 0744***333 on 4/11/26 at 9:30 PM New M-PESA balance is Ksh13,840.00.",
+            "TKN5WX7C3D Confirmed. Ksh500.00 sent to BRIAN OTIENO 0744000333 on 5/11/26 at 6:10 PM. New M-PESA balance is Ksh13,340.00.",
+            amina,
+        ].joined(separator: "\n\n"))
+        snap("09-import-paste")
+        app.buttons["import-read"].tap()
+        XCTAssertTrue(app.scrolledTo(app.staticTexts["Ready"].firstMatch).waitForExistence(timeout: 10))
+        snap("10-import-results")
+        app.swipeUp()
+        snap("11-import-results-more")
+    }
 }
