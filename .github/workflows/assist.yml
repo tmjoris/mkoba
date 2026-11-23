@@ -11,6 +11,7 @@ on:
       - "Sources/**"
       - "Tests/**"
       - "Assist/**"
+      - "!Assist/Evals/runs/**"
       - ".github/workflows/assist.yml"
   workflow_dispatch:
 
