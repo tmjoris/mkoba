@@ -114,6 +114,9 @@ private struct ImportRow: View {
             }
             if review.decision == .skip {
                 Text(review.message).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                if review.issues.contains(.moneyNotReceived) {
+                    Text(ImportIssue.moneyNotReceived.explanation).font(.caption2).foregroundStyle(.secondary)
+                }
             } else {
                 HStack {
                     Text(member?.name ?? "Unknown member").font(.subheadline)
