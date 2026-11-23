@@ -109,7 +109,8 @@ final class ImportTests: XCTestCase {
         reading.senderName = "AMINA ATIENO"
         reading.senderPhone = "0744000333"
         XCTAssertEqual(Set(reviewOne(reading).issues),
-                       [.amountNotInMessage, .receiptNotInMessage, .nameNotInMessage, .phoneNotInMessage])
+                       [.amountNotInMessage, .receiptNotInMessage, .notAConfirmation, .nameNotInMessage,
+                        .phoneNotInMessage])
     }
 
     func testDuplicatesAgainstTheBooksAndWithinThePaste() {

@@ -40,15 +40,21 @@ public enum MemberMatcher {
         }
     }
 
-    /// Members sharing the most name words with `name`, ignoring case and order.
-    /// "AMINA WANJIKU" picks Amina Wanjiku over Grace Wanjiku; "WANJIKU" alone picks both.
+    /// Members sharing the most name words with `name`, ignoring case and order; on a tie,
+    /// the member more of whose name matched. "AMINA WANJIKU" picks Amina Wanjiku over Grace
+    /// Wanjiku, and a member called just "Amina" over Grace too; "WANJIKU" alone picks both.
     static func bestByName(_ name: String, in members: [Member]) -> [Member] {
         let words = Set(tokens(name))
         guard !words.isEmpty else { return [] }
-        let scored = members.map { member in (member, tokens(member.name).filter(words.contains).count) }
-        let best = scored.map(\.1).max() ?? 0
-        guard best > 0 else { return [] }
-        return scored.filter { $0.1 == best }.map(\.0)
+        let scored = members.map { member -> (member: Member, shared: Int, share: Double) in
+            let own = tokens(member.name)
+            let shared = own.filter(words.contains).count
+            return (member, shared, own.isEmpty ? 0 : Double(shared) / Double(own.count))
+        }
+        guard let best = scored.max(by: { ($0.shared, $0.share) < ($1.shared, $1.share) }), best.shared > 0 else {
+            return []
+        }
+        return scored.filter { $0.shared == best.shared && $0.share == best.share }.map(\.member)
     }
 
     static func tokens(_ name: String) -> [String] {
