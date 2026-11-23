@@ -44,7 +44,7 @@ public enum ImportDecision: String, Hashable, Sendable, Codable {
     case record
     /// A person must look at it.
     case check
-    /// Not money coming in (money sent, airtime, Fuliza, chat).
+    /// Not money coming in (money sent, airtime, Fuliza, chat), by the reader or by M-Pesa's own words.
     case skip
 }
 
@@ -60,7 +60,8 @@ public struct ImportReview: Hashable, Sendable {
     public let issues: [ImportIssue]
 
     public var decision: ImportDecision {
-        guard reading.isIncomingPayment else { return .skip }
+        // M-Pesa's own confirmation says the money went out: not a payment, whatever the reader thought.
+        guard reading.isIncomingPayment, !issues.contains(.moneyNotReceived) else { return .skip }
         return issues.isEmpty && member != nil && amount != nil && cycle != nil ? .record : .check
     }
 

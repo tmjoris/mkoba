@@ -163,6 +163,7 @@ final class ImportTests: XCTestCase {
                                      dateText: #"6\/11\/26 at 2:00 PM"#)
         let review = reviewOne(reading, message: sent)
         XCTAssertEqual(review.issues, [.moneyNotReceived], "the stray * and escaped slashes are not issues")
+        XCTAssertEqual(review.decision, .skip)
         XCTAssertEqual(reviewOne(reading, message: sent, checks: false).decision, .record)
     }
 
