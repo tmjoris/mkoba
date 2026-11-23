@@ -68,4 +68,37 @@ final class MkobaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["error-banner"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["error-banner"].label.contains("capped"))
     }
+
+    func testImportFromAnMpesaMessage() {
+        app.buttons["create-group-empty"].tap()
+        app.textFields["group-name"].tap()
+        app.textFields["group-name"].typeText("Umoja Chama")
+        app.textFields["my-name"].tap()
+        app.textFields["my-name"].typeText("Wanjiru")
+        app.textFields["my-phone"].tap()
+        app.textFields["my-phone"].typeText("0712345678")
+        app.buttons["create-group-confirm"].tap()
+        app.staticTexts["Umoja Chama"].firstMatch.tap()
+
+        app.buttons["members-link"].tap()
+        app.buttons["add-member"].tap()
+        app.textFields["member-name"].tap()
+        app.textFields["member-name"].typeText("Amina Wanjiku")
+        app.textFields["member-phone"].tap()
+        app.textFields["member-phone"].typeText("0733000222")
+        app.buttons["add-member-confirm"].tap()
+        XCTAssertTrue(app.staticTexts["Amina Wanjiku"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        app.buttons["import-link"].tap()
+        let paste = app.textViews["import-paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        paste.typeText("TKL3QZ8M2A Confirmed.You have received Ksh2,000.00 from AMINA WANJIKU 0733000222 on 3/11/26 at 7:42 PM New M-PESA balance is Ksh12,340.00.")
+        app.buttons["import-read"].tap()
+        XCTAssertTrue(app.staticTexts["Ready"].waitForExistence(timeout: 60))
+        app.buttons["import-record"].tap()
+        XCTAssertTrue(app.staticTexts["pot-amount"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["pot-amount"].label, "KES 2,000")
+    }
 }

@@ -43,6 +43,12 @@ private struct DashboardContent: View {
                         Label("Record a cash contribution", systemImage: "banknote")
                     }
                     .accessibilityIdentifier("record-cash-link")
+                    NavigationLink {
+                        ImportMessagesView(session: session)
+                    } label: {
+                        Label("Import from M-Pesa messages", systemImage: "text.bubble")
+                    }
+                    .accessibilityIdentifier("import-link")
                 }
             }
             Section("This cycle") {
