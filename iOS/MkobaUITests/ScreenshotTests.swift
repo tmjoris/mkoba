@@ -67,7 +67,7 @@ final class ScreenshotTests: XCTestCase {
         snap("05-contribute")
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
-        app.buttons["loans-link"].tap()
+        app.scrolledTo(app.buttons["loans-link"]).tap()
         app.buttons["request-loan"].tap()
         type("amount-field", "5000")
         snap("06-request-loan")

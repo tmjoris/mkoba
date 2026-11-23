@@ -13,6 +13,7 @@ struct ImportMessagesView: View {
     @State private var chosen: Set<Int> = []
     @State private var isReading = false
     @State private var error: String?
+    @FocusState private var pasteFocused: Bool
     private let importer = MessageImporter.best()
 
     var body: some View {
@@ -23,6 +24,7 @@ struct ImportMessagesView: View {
                     .font(.callout)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .focused($pasteFocused)
                     .accessibilityIdentifier("import-paste")
                 Button {
                     Task { await read() }
@@ -62,6 +64,7 @@ struct ImportMessagesView: View {
     }
 
     private func read() async {
+        pasteFocused = false // put the keyboard away so the results are visible
         isReading = true
         defer { isReading = false }
         error = nil

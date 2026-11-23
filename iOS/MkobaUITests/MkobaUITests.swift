@@ -60,7 +60,7 @@ final class MkobaUITests: XCTestCase {
         app.buttons["create-group-confirm"].tap()
         app.staticTexts["Test"].firstMatch.tap()
 
-        app.buttons["loans-link"].tap()
+        app.scrolledTo(app.buttons["loans-link"]).tap()
         app.buttons["request-loan"].tap()
         app.textFields["amount-field"].tap()
         app.textFields["amount-field"].typeText("5000")
@@ -90,15 +90,18 @@ final class MkobaUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Amina Wanjiku"].waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
-        app.buttons["import-link"].tap()
+        app.scrolledTo(app.buttons["import-link"]).tap()
         let paste = app.textViews["import-paste"]
         XCTAssertTrue(paste.waitForExistence(timeout: 5))
         paste.tap()
         paste.typeText("TKL3QZ8M2A Confirmed.You have received Ksh2,000.00 from AMINA WANJIKU 0733000222 on 3/11/26 at 7:42 PM New M-PESA balance is Ksh12,340.00.")
         app.buttons["import-read"].tap()
-        XCTAssertTrue(app.staticTexts["Ready"].waitForExistence(timeout: 60))
+        let ready = app.scrolledTo(app.staticTexts["Ready"])
+        XCTAssertTrue(ready.waitForExistence(timeout: 10), app.debugDescription)
         app.buttons["import-record"].tap()
-        XCTAssertTrue(app.staticTexts["pot-amount"].waitForExistence(timeout: 5))
+        let pot = app.staticTexts["pot-amount"]
+        if !pot.waitForExistence(timeout: 3) { app.swipeDown() } // the dashboard may still be scrolled
+        XCTAssertTrue(pot.waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["pot-amount"].label, "KES 2,000")
     }
 }
