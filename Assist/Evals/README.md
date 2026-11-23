@@ -139,6 +139,15 @@ instead of disappearing (gemma3 drops two of them). For qwen2.5 3B, what is stil
 the model did not fill in who the money was for (safe: no member matched), a chat message
 quoting "Ksh2,000", and one model call that failed twice.
 
+### Run 3: the same again
+
+Run 3 repeated run 2's models and prompt with the final checks, to see how much a rerun
+moves. Wrong stayed at **0** for every model; correct moved by at most one (gemma3 4B 48,
+llama3.2 3B 47, qwen2.5 3B 49, qwen2.5 7B 48). Greedy decoding was not perfectly repeatable
+on these runners: between runs 2 and 3, 1 or 2 of the 52 readings changed for qwen2.5 and
+llama3.2, and 11 for gemma3. The checks are what keep the outcome stable when the readings
+are not. [Raw readings](runs/3).
+
 ### Design decision: rules first
 
 Reading every message with the model, or only the ones the regular expression cannot read,
@@ -154,5 +163,5 @@ and the same checks for everything.
   Intelligence, and I develop on Linux. The open 3–4B models stand in for it because it is
   about the same size; the code path is the same, but its accuracy may differ.
 - **52 synthetic messages are a small test set.** Real treasurers' messages would find
-  formats I did not think of. Every number here is from one run.
+  formats I did not think of. Each table is one run; run 3 shows how much a rerun moves.
 - **Time per message is on a CPU-only runner**, not on a phone's Neural Engine.
